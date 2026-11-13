@@ -1,8 +1,82 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"><meta http-equiv="refresh" content="0; url=estatus.pdf">
-<title>Estatus de retrabajo</title></head>
-<body style="font-family:system-ui,Arial,sans-serif;padding:24px">
-<p>Abriendo el estatus de retrabajo&hellip;</p>
-<p><a href="estatus.pdf">Si no se abre solo, toca aqu&iacute; para ver el PDF</a></p>
-</body></html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Estatus de retrabajo REAR</title>
+<style>
+  :root{--bg:#edf1f7;--card:#fff;--tx:#0f1b2d;--mu:#5a6982;--bd:#dbe2ec;--ac:#1d4ed8;--rd:#c2412d;--gr:#15803d}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--tx);-webkit-text-size-adjust:100%}
+  header{background:#0f1b2d;color:#fff;padding:14px 16px}
+  header h1{margin:0;font-size:18px}
+  header p{margin:4px 0 0;font-size:13px;color:#b9c4d4}
+  main{max-width:760px;margin:0 auto;padding:12px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .tot{display:flex;gap:10px;flex-wrap:wrap}
+  .tot div{flex:1;min-width:120px;text-align:center}
+  .tot b{display:block;font-size:28px}
+  .ab{color:var(--rd)}.ce{color:var(--gr)}
+  .mu{color:var(--mu);font-size:13px}
+  h2{font-size:16px;margin:0 0 6px;display:flex;justify-content:space-between;align-items:center}
+  .pill{font-size:12px;padding:2px 8px;border-radius:99px;background:#fde8e4;color:var(--rd);font-weight:600}
+  .pill.ok{background:#dcfce7;color:var(--gr)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:6px 4px;border-top:1px solid var(--bd);vertical-align:top}
+  th{font-size:12px;color:var(--mu);font-weight:600;border-top:0}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  a.btn,button{font:inherit;font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:#fff;color:var(--tx);text-decoration:none;cursor:pointer}
+  a.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+  .err{color:var(--rd)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Retrabajo REAR · Estatus por línea</h1>
+  <p id="fecha">Cargando datos…</p>
+</header>
+<main>
+  <div class="card tot" id="tot"></div>
+  <div id="lineas"></div>
+  <div class="card row">
+    <button onclick="location.reload()">Actualizar</button>
+    <a class="btn p" id="pdf" href="estatus.pdf" target="_blank" rel="noopener">Ver PDF con road map</a>
+  </div>
+  <p class="mu" style="text-align:center">Solo consulta. Los datos los publica el administrador desde la aplicación.</p>
+</main>
+<script>
+(function(){
+  var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+  function pinta(){
+    var D=window.DATOS;
+    if(!D||!D.l){document.getElementById("fecha").innerHTML='<span class="err" style="color:#fca5a5">No se encontró datos.js junto a esta página.</span>';return}
+    var d=new Date(D.t),p=function(n){return(n<10?"0":"")+n};
+    document.getElementById("fecha").textContent="Datos al "+p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear()+" "+p(d.getHours())+":"+p(d.getMinutes());
+    var ab=D.o||[],ce=(D.c||[]).reduce(function(a,b){return a+b},0);
+    document.getElementById("tot").innerHTML='<div><b class="ab">'+ab.length+'</b><span class="mu">Abiertos</span></div><div><b class="ce">'+ce+'</b><span class="mu">Cerrados</span></div>';
+    var h="";
+    D.l.forEach(function(lin,i){
+      var a=ab.filter(function(r){return r[0]===i}).sort(function(x,y){return(+x[1]||0)-(+y[1]||0)});
+      h+='<div class="card"><h2>'+esc(lin)+'<span class="pill'+(a.length?'':' ok')+'">'+(a.length?a.length+' abiertos':'Sin pendientes')+'</span></h2>';
+      if(a.length){
+        h+='<table><tr><th>Cordón</th><th>Defecto</th><th>Estación</th><th>Fecha</th></tr>';
+        a.forEach(function(r){h+='<tr><td><b>C'+esc(r[1])+'</b></td><td>'+esc(r[2])+(r[4]?' <span class="mu">('+esc(r[4])+')</span>':'')+'</td><td>'+esc(r[3])+'</td><td class="mu">'+esc(r[5])+'</td></tr>'});
+        h+='</table>';
+      }
+      h+='<p class="mu" style="margin:6px 0 0">Cerrados: '+((D.c||[])[i]||0)+'</p></div>';
+    });
+    document.getElementById("lineas").innerHTML=h;
+  }
+  // Carga datos.js evitando la caché del celular, para que todos vean la misma versión.
+  var s=document.createElement("script");
+  s.src="datos.js?v="+Date.now();
+  s.onload=pinta;
+  s.onerror=function(){window.DATOS=null;pinta()};
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
